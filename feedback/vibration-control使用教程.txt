@@ -4,13 +4,13 @@ vibration-control.py 使用教程
 用途
 ----
 
-这个脚本用于直接连接震动器 PowerShell TCP 串口桥，发送 ESP32-S3 控制命令。
+这个脚本用于直接连接震动器设备 TCP 桥，发送震动控制命令。
 
 默认连接：
 
   127.0.0.1:25363
 
-也就是默认要求你已经在本机启动 PowerShell 串口桥脚本。
+也就是默认要求你已经在本机启动设备桥脚本。
 
 如果桥监听在别的机器或端口，用 --host / --port 指定。
 
@@ -26,7 +26,7 @@ vibration-control.py 使用教程
 
   py .\vibration-control.py --ping
 
-查看 ESP32-S3 / 震动器状态：
+查看设备 / 震动器状态：
 
   py .\vibration-control.py --status
 
@@ -76,7 +76,7 @@ set 和 hit 的区别
 
   HIT 1
 
-ESP32-S3 固件会把 damage 换算成强度增量再叠加到当前强度。
+设备会把 damage 换算成强度增量再叠加到当前强度。
 
 
 高级持续命令
@@ -292,9 +292,9 @@ raw 命令只允许可打印 ASCII，长度不能超过 64 字符。
 脚本会打印：
 
   <= 发送的命令
-  => 桥或 ESP32-S3 返回的协议结果
+  => 桥或设备返回的协议结果
 
-脚本会过滤 ESP32-S3 的 NimBLE 调试日志，只保留 PONG / STATUS / OK / ERR / SERVICES 这类协议结果行。
+脚本会过滤桥与设备的调试日志，只保留 PONG / STATUS / OK / ERR / SERVICES 这类协议结果行。
 
 --------
 

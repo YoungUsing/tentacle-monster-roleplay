@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Small CLI client for the GALAKU PowerShell TCP serial bridge."""
+"""Small CLI client for the device feedback TCP bridge."""
 
 from __future__ import annotations
 
@@ -25,10 +25,101 @@ ROOT = Path(__file__).resolve().parent
 BACKGROUND_STATE_FILE = ROOT / "advanced-background.json"
 BACKGROUND_STOP_PREFIX = ".advanced-background-"
 STOP_POLL_SECONDS = 0.1
+EVENT_FILE = ROOT / "event.json"
+
+
+def run_event_listener(poll_seconds: float = 0.2) -> int:
+    """Standalone event-file interface.
+
+    Watches ``event.json`` for ``{"action": "...", "value": ...}`` and
+    translates each event into the corresponding device command, keeping the
+    device side fully decoupled from callers: callers only ever write the
+    event file and need to know nothing about the device bridge.
+
+    Supported actions:
+      - ``ping`` / ``status`` / ``stop``: no value required
+      - ``set``: ``value`` is intensity 0-100
+      - ``hit``: ``value`` is event damage (> 0)
+
+    The file is deleted after each event is consumed. A ``{"action": "quit"}``
+    event stops the listener.
+    """
+    print(f"event listener watching {EVENT_FILE}")
+    print("write {\"action\": \"set\"|\"hit\"|\"stop\"|\"ping\"|\"status\", \"value\": ...} to trigger")
+    try:
+        while True:
+            try:
+                raw = EVENT_FILE.read_text(encoding="utf-8")
+            except FileNotFoundError:
+                time.sleep(poll_seconds)
+                continue
+            except OSError as error:
+                print(f"read event failed: {error}", file=sys.stderr)
+                time.sleep(poll_seconds)
+                continue
+
+            try:
+                EVENT_FILE.unlink()
+            except OSError as error:
+                print(f"consume event failed: {error}", file=sys.stderr)
+                time.sleep(poll_seconds)
+                continue
+
+            try:
+                event = json.loads(raw)
+            except json.JSONDecodeError as error:
+                print(f"invalid event ignored: {error}", file=sys.stderr)
+                continue
+
+            if not isinstance(event, dict):
+                print("invalid event ignored: not an object", file=sys.stderr)
+                continue
+
+            action = event.get("action")
+            if action == "quit":
+                print("event listener quit")
+                return 0
+
+            try:
+                command = build_event_command(action, event.get("value"))
+            except ValueError as error:
+                print(f"invalid event ignored: {error}", file=sys.stderr)
+                continue
+
+            try:
+                raw_reply = send_command(DEFAULT_HOST, DEFAULT_PORT, DEFAULT_TIMEOUT, command)
+            except OSError as error:
+                print(f"<= {command}\nconnect/send failed: {error}", file=sys.stderr)
+                continue
+
+            reply = select_protocol_reply(raw_reply, command) or raw_reply.strip() or f"OK SENT {command}"
+            print(f"<= {command}\n=> {reply}")
+
+            if action == "stop":
+                request_active_background_stop()
+    except KeyboardInterrupt:
+        print("event listener interrupted")
+        return 130
+
+
+def build_event_command(action: object, value: object) -> str:
+    if action in ("ping", "status", "stop"):
+        return {"ping": "PING", "status": "STATUS", "stop": "STOP"}[action]
+    if action == "set":
+        if not isinstance(value, (int, float)) or isinstance(value, bool) or not 0 <= value <= 100:
+            raise ValueError("set requires numeric value 0-100")
+        return f"SET {int(value)}"
+    if action == "hit":
+        if not isinstance(value, (int, float)) or isinstance(value, bool) or value <= 0:
+            raise ValueError("hit requires positive numeric value")
+        return normalize_command(f"HIT {value:g}")
+    raise ValueError(f"unknown action: {action!r}")
 
 
 def main(argv: list[str] | None = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
+    if argv and argv[0] == "--events":
+        return run_event_listener()
     if argv and argv[0] == "--advanced":
         return advanced_main(argv[1:])
 
@@ -60,7 +151,7 @@ def main(argv: list[str] | None = None) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="vibration-control.py",
-        description="Send one GALAKU control command to the PowerShell TCP serial bridge.",
+        description="Send one device control command to the feedback TCP bridge.",
     )
     parser.add_argument("--host", default=DEFAULT_HOST, help=f"bridge host, default: {DEFAULT_HOST}")
     parser.add_argument("--port", type=int, default=DEFAULT_PORT, help=f"bridge TCP port, default: {DEFAULT_PORT}")
@@ -140,7 +231,7 @@ def advanced_main(argv: list[str]) -> int:
 def build_advanced_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="vibration-control.py --advanced",
-        description="Run bounded repeated GALAKU feedback commands.",
+        description="Run bounded repeated feedback commands.",
     )
     parser.add_argument("--host", default=DEFAULT_HOST, help=f"bridge host, default: {DEFAULT_HOST}")
     parser.add_argument("--port", type=int, default=DEFAULT_PORT, help=f"bridge TCP port, default: {DEFAULT_PORT}")

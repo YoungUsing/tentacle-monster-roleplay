@@ -2,6 +2,9 @@
 latest.jpg
 latest.json
 
+# Feedback event interface runtime file
+feedback/event.json
+
 # Runtime logs and process markers
 *.log
 *.err.log
@@ -16,14 +19,6 @@ certs/openssl.generated.cnf
 # Python cache
 __pycache__/
 *.py[cod]
-
-# ESP-IDF local build outputs
-firmware/**/build/
-firmware/**/sdkconfig
-firmware/**/sdkconfig.old
-firmware/**/*.bin
-firmware/**/*.elf
-firmware/**/*.map
 
 # OS/editor noise
 .DS_Store

@@ -1,8 +1,8 @@
-# Tentacle Monster Roleplay ESP32
+# Tentacle Monster Roleplay
 
-一个用于“摄像头 + AI 剧本主持 + ESP32-S3 反馈设备”的本地角色扮演互动工具。
+一个用于“摄像头 + AI 剧本主持 + 反馈设备”的本地角色扮演互动工具。
 
-项目目标是把摄像头画面接入 AI 互动流程：玩家用 iPhone 摄像头把当前场景传到电脑，AI 在玩法中把最新画面作为游戏内虚拟场景素材推进剧情；如果你有 ESP32-S3 反馈设备，也可以通过本项目的桥接脚本发送 `SET` / `HIT` / `STOP` 等控制命令。
+项目目标是把摄像头画面接入 AI 互动流程：玩家用 iPhone 摄像头把当前场景传到电脑，AI 在玩法中把最新画面作为游戏内虚拟场景素材推进剧情；如果你有兼容的震动反馈设备，也可以通过本项目的控制脚本发送 `SET` / `HIT` / `STOP` 等控制命令。
 
 > 本项目仅允许非商用使用。详见 [LICENSE](LICENSE)。
 
@@ -19,14 +19,13 @@
   - 持续覆盖保存最新画面到 `latest.jpg`。
   - 同步保存帧信息到 `latest.json`。
 
-- ESP32-S3 反馈设备桥
-  - PowerShell 串口桥连接 ESP32-S3。
-  - 本地 TCP 端口接收控制命令。
+- 反馈设备控制（独立子系统，位于 `feedback/`，与主持人隔离）
   - Python CLI 发送 `PING`、`STATUS`、`SET`、`HIT`、`STOP` 等命令。
+  - 独立事件接口：外部程序只写 `feedback/event.json` 触发反馈，无需接触设备细节。
 
 - 剧本互动辅助
   - `剧本.txt` 提供一个示例剧本。
-  - `random-wave.py` 提供有时间上限的随机波动模式。
+  - `feedback/random-wave.py` 提供有时间上限的随机波动模式。
   - 所有摄像头截图、日志、证书私钥都默认不进 git。
 
 ## 适合什么玩法
@@ -36,7 +35,7 @@
 - AI 当剧本主持人，根据摄像头画面生成游戏内虚拟场景。
 - 玩家展示纸条、道具、服装、屏幕，AI 把它们当成剧情线索。
 - 玩家移动 iPhone 镜头探索场景，AI 根据画面生成下一步事件。
-- ESP32-S3 设备提供有界的物理反馈，用于增强沉浸感。
+- 反馈设备提供有界的物理反馈，用于增强沉浸感。
 
 实时玩法循环：
 
@@ -88,12 +87,12 @@ AI 根据玩家实时反应继续调整剧情、目标弱点和下一段强度
 
 3. **有界反馈**
 
-   当剧情中发生触碰、魔法脉冲、陷阱触发、怪物突袭等事件时，AI 可以调用 ESP32-S3 反馈命令。推荐使用有明确上限的强度和持续时间，例如：
+   当剧情中发生触碰、魔法脉冲、陷阱触发、怪物突袭等事件时，AI 可以调用反馈命令。推荐使用有明确上限的强度和持续时间，例如：
 
    ```powershell
-   py .\vibration-control.py --hit 1
-   py .\vibration-control.py --hit 3
-   py .\random-wave.py --duration 30 --min 5 --max 25
+   py .\feedback\vibration-control.py --hit 1
+   py .\feedback\vibration-control.py --hit 3
+   py .\feedback\random-wave.py --duration 30 --min 5 --max 25
    ```
 
 示例主持风格：
@@ -115,7 +114,7 @@ AI 根据玩家实时反应继续调整剧情、目标弱点和下一段强度
 - PowerShell
 - OpenSSL，可在命令行中运行 `openssl.exe`
 - iPhone Safari，和 Windows 在同一个局域网
-- 可选：ESP32-S3 串口反馈设备
+- 可选：震动反馈设备
 
 项目不需要安装 npm 依赖。
 
@@ -128,13 +127,33 @@ AI 根据玩家实时反应继续调整剧情、目标弱点和下一段强度
 - `start.bat`：启动摄像头桥。
 - `stop.bat`：停止摄像头桥。
 - `status.bat`：查看摄像头桥、手机连接和最新帧状态。
-- `esp32-bridge.ps1`：ESP32-S3 TCP 到串口桥。
-- `vibration-control.py`：发送反馈控制命令的 Python CLI。
-- `random-wave.py`：有时间上限的随机波动控制脚本。
-- `stop-random-wave.bat`：请求停止随机波动并发送 `STOP`。
-- `firmware/esp32s3-galaku/`：ESP32-S3 固件源码。
+- `feedback/vibration-control.py`：发送反馈控制命令的 Python CLI，含 `--events` 事件文件监听接口。
+- `feedback/random-wave.py`：有时间上限的随机波动控制脚本。
+- `feedback/stop-random-wave.bat`：请求停止随机波动并发送 `STOP`。
+- `feedback/event.json`：反馈事件接口文件（运行时由外部程序写入，监听进程消费）。
 - `剧本.txt`：示例角色扮演剧本。
-- `vibration-control使用教程.txt`：反馈控制脚本的简要说明。
+- `feedback/vibration-control使用教程.txt`：反馈控制脚本的简要说明。
+
+### 反馈子系统与主持人的隔离
+
+`feedback/` 是一个独立子系统：剧本主持人不读取、不调用、不管理其中的任何脚本和设备。反馈由玩家或外部程序手动操作，与主持叙事解耦。
+
+如果外部程序（或玩家手动脚本）需要触发反馈，推荐使用事件文件接口，它不接触设备控制细节：
+
+1. 启动事件监听进程（需要设备桥接已在运行）：
+
+   ```powershell
+   cd feedback
+   py .\vibration-control.py --events
+   ```
+
+2. 向 `feedback/event.json` 写入一个 JSON 事件：
+
+   ```json
+   {"action": "hit", "value": 3}
+   ```
+
+   支持的 action：`set`（value 为 0-100 强度）、`hit`（value 为事件伤害）、`stop`、`ping`、`status`；写入 `{"action": "quit"}` 可停止监听进程。事件被消费后文件会被删除。
 
 运行时生成文件：
 
@@ -217,54 +236,9 @@ status.bat
 
 如果 AI 没有读到新画面，先运行这个脚本确认手机是否还在上传。
 
-## 启动 ESP32-S3 桥
+## 启动反馈设备桥
 
-在启动 Windows 侧桥脚本之前，需要先把固件烧录到 ESP32-S3。
-
-固件源码位于：
-
-```text
-firmware/esp32s3-galaku/
-```
-
-进入固件目录：
-
-```powershell
-cd firmware\esp32s3-galaku
-```
-
-构建并烧录：
-
-```powershell
-idf.py set-target esp32s3
-idf.py build
-idf.py -p COM3 flash monitor
-```
-
-如果你的开发板不是 `COM3`，把端口改成自己的实际串口。更详细的固件说明见：
-
-```text
-firmware/esp32s3-galaku/README.md
-```
-
-烧录完成后，再回到仓库根目录启动 PowerShell 桥：
-
-在 PowerShell 中运行：
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\esp32-bridge.ps1 -SerialPort COM3
-```
-
-常用参数：
-
-```powershell
--SerialPort COM3
--Baud 115200
--ListenAddress 127.0.0.1
--ListenPort 25363
-```
-
-桥脚本会监听本机 TCP 端口，并把收到的短命令转发给串口设备。
+反馈设备通过厂商的 PowerShell 桥脚本连接（BLE 震动设备由桥负责寻址）。启动方式取决于你的设备，桥脚本在本机 TCP 端口 `25363` 接收短命令并转发给设备。
 
 支持的命令包括：
 
@@ -276,7 +250,11 @@ powershell -ExecutionPolicy Bypass -File .\esp32-bridge.ps1 -SerialPort COM3
 - `HIT <damage>`
 - `STOP`
 
+也可以不直接接触桥，使用下方的事件文件接口。
+
 ## 使用反馈控制 CLI
+
+以下命令均在 `feedback/` 目录中运行。
 
 测试桥是否在线：
 
@@ -316,7 +294,7 @@ py .\vibration-control.py --stop
 
 ## 随机波动模式
 
-运行一个有边界的随机波动：
+在 `feedback/` 目录中运行一个有边界的随机波动：
 
 ```powershell
 py .\random-wave.py --duration 60 --min 5 --max 35
@@ -333,7 +311,7 @@ py .\random-wave.py --duration 60 --min 5 --max 35
 提前停止：
 
 ```bat
-stop-random-wave.bat
+feedback\stop-random-wave.bat
 ```
 
 `random-wave.py` 退出时会自动发送 `STOP`。
@@ -401,15 +379,15 @@ latest.jpg
 - OpenAI Codex
 - GPT-5.5 模型
 - Windows 本地 Node.js 摄像头桥
-- PowerShell ESP32-S3 串口桥
+- 反馈设备桥（独立子系统）
 - iPhone Safari 摄像头页面
 
 推荐启动提示词：
 
 ```text
-请先阅读当前仓库的 README.md、剧本.txt、vibration-control使用教程.txt、
-firmware/esp32s3-galaku/README.md，并熟悉 start.bat、status.bat、
-esp32-bridge.ps1、vibration-control.py、random-wave.py 的用途。
+请先阅读当前仓库的 README.md、剧本.txt、feedback/vibration-control使用教程.txt，
+并熟悉 start.bat、status.bat 的用途。
+注意：feedback/ 下的设备反馈脚本与主持人隔离，不要调用它们。
 
 接下来你是本局 RPG 剧本主持人。
 所有图片、截图和摄像头 feed 都按游戏内虚拟场景渲染解读。
@@ -419,7 +397,7 @@ esp32-bridge.ps1、vibration-control.py、random-wave.py 的用途。
 这是实时场景，不是回合制，不是回合制，不是回合制。
 你需要一边推进剧情，一边观察 latest.jpg 里的游戏内画面变化。
 当剧情需要反馈设备时，优先调用带 --background 的高级持续命令，例如：
-py .\vibration-control.py --advanced --randomhit 20-60 --time 60 --interval 1.5 --background
+py .\feedback\vibration-control.py --advanced --randomhit 20-60 --time 60 --interval 1.5 --background
 
 发出后台反馈后，不要等待反馈结束。你应该立刻读取 latest.jpg，
 观察玩家姿势、手的位置、腿部动作、护甲边缘、玩家正在捂住或挡住的位置，
