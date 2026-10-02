@@ -31,7 +31,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
   "Write-Host '[camera-bridge] Started PID' $p.Id; " ^
   "Write-Host '[camera-bridge] Open on iPhone Safari:'; " ^
   "foreach ($ip in $ips) { Write-Host ('  https://' + $ip + ':7777/') }; " ^
-  "Write-Host '[camera-bridge] Latest frame will be saved to:' (Join-Path (Get-Location) 'latest.jpg')"
+  "Write-Host '[camera-bridge] Latest frame will be saved to:' (Join-Path (Get-Location) '..' | Join-Path -ChildPath 'latest.jpg')"
 
 echo.
 echo Press any key to close this window. The service keeps running in background.

@@ -4,9 +4,9 @@ const path = require("path");
 
 const HOST = "0.0.0.0";
 const PORT = 7777;
-const ROOT = __dirname;
-const PUBLIC_DIR = path.join(ROOT, "public");
-const CERT_DIR = path.join(ROOT, "certs");
+const ROOT = path.join(__dirname, "..");
+const PUBLIC_DIR = path.join(__dirname, "public");
+const CERT_DIR = path.join(__dirname, "certs");
 const LATEST_IMAGE = path.join(ROOT, "latest.jpg");
 const LATEST_META = path.join(ROOT, "latest.json");
 

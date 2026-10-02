@@ -120,19 +120,38 @@ AI 根据玩家实时反应继续调整剧情、目标弱点和下一段强度
 
 ## 文件说明
 
-核心文件：
+仓库分为三个隔离的子系统，彼此只通过根目录的接口文件交互：
 
-- `server.js`：本地 HTTPS 摄像头桥，监听 `7777`。
-- `public/index.html`：iPhone Safari 打开的摄像头控制页面。
-- `start.bat`：启动摄像头桥。
-- `stop.bat`：停止摄像头桥。
-- `status.bat`：查看摄像头桥、手机连接和最新帧状态。
+- 根目录：剧本与主持规则（`剧本.txt`、`AGENTS.md`）。
+- `vision/`：图像输入子系统（摄像头桥）。
+- `feedback/`：设备反馈子系统（震动控制）。
+
+图像输入子系统（`vision/`）：
+
+- `vision/server.js`：本地 HTTPS 摄像头桥，监听 `7777`。
+- `vision/public/index.html`：iPhone Safari 打开的摄像头控制页面。
+- `vision/start.bat`：启动摄像头桥。
+- `vision/stop.bat`：停止摄像头桥。
+- `vision/status.bat`：查看摄像头桥、手机连接和最新帧状态。
+- `vision/scripts/generate-cert.ps1`：生成本地 HTTPS 自签名证书。
+- 接口文件：`latest.jpg` / `latest.json`（写入仓库根目录，主持人和其他程序只读它们）。
+
+设备反馈子系统（`feedback/`）：
+
 - `feedback/vibration-control.py`：发送反馈控制命令的 Python CLI，含 `--events` 事件文件监听接口。
 - `feedback/random-wave.py`：有时间上限的随机波动控制脚本。
 - `feedback/stop-random-wave.bat`：请求停止随机波动并发送 `STOP`。
 - `feedback/event.json`：反馈事件接口文件（运行时由外部程序写入，监听进程消费）。
-- `剧本.txt`：示例角色扮演剧本。
 - `feedback/vibration-control使用教程.txt`：反馈控制脚本的简要说明。
+
+主持与剧本：
+
+- `剧本.txt`：示例角色扮演剧本。
+- `AGENTS.md`：主持人规则，定义与两个子系统的独立接口。
+
+### 图像输入子系统与主持人的隔离
+
+`vision/` 是一个独立子系统：剧本主持人不读取、不调用、不管理其中的任何脚本和进程。摄像头桥由玩家手动启动（`vision/start.bat`），主持人与画面之间只通过根目录的 `latest.jpg`（伴随 `latest.json` 元数据）交互。接口未就绪时，主持人安静跳过画面观察，用文字叙事推进。
 
 ### 反馈子系统与主持人的隔离
 
@@ -159,9 +178,9 @@ AI 根据玩家实时反应继续调整剧情、目标弱点和下一段强度
 
 - `latest.jpg`：手机上传的最新画面。
 - `latest.json`：最新画面的元数据。
-- `server.log` / `server.err.log` / `server.pid`：本地服务运行文件。
-- `certs/*.pem`：本地 HTTPS 自签名证书。
-- `certs/openssl.generated.cnf`：运行时生成的 OpenSSL 配置。
+- `vision/server.log` / `server.err.log` / `server.pid`：本地服务运行文件。
+- `vision/certs/*.pem`：本地 HTTPS 自签名证书。
+- `vision/certs/openssl.generated.cnf`：运行时生成的 OpenSSL 配置。
 
 这些运行时文件已经写入 `.gitignore`，不会被提交。
 
@@ -170,14 +189,14 @@ AI 根据玩家实时反应继续调整剧情、目标弱点和下一段强度
 双击：
 
 ```bat
-start.bat
+vision\start.bat
 ```
 
 脚本会自动完成：
 
-1. 检查 `certs/key.pem` 和 `certs/cert.pem` 是否存在。
-2. 如果证书不存在，调用 `scripts/generate-cert.ps1` 生成本地 HTTPS 自签名证书。
-3. 后台启动 `node server.js`。
+1. 检查 `vision/certs/key.pem` 和 `vision/certs/cert.pem` 是否存在。
+2. 如果证书不存在，调用 `vision/scripts/generate-cert.ps1` 生成本地 HTTPS 自签名证书。
+3. 后台启动 `node vision/server.js`。
 4. 输出 iPhone Safari 应该打开的局域网 HTTPS 地址，例如：
 
 ```text
@@ -188,7 +207,7 @@ https://你的局域网IP:7777/
 
 ## 使用 iPhone 摄像头页面
 
-在 iPhone Safari 打开 `start.bat` 输出的地址后：
+在 iPhone Safari 打开 `vision\start.bat` 输出的地址后：
 
 1. 选择摄像头方向：
    - 后置摄像头
@@ -214,7 +233,7 @@ latest.json
 双击：
 
 ```bat
-stop.bat
+vision\stop.bat
 ```
 
 它会优先读取 `server.pid` 停止服务。如果 PID 文件不存在，也会尝试停止正在监听 `7777` 端口的 Node 进程。
@@ -224,7 +243,7 @@ stop.bat
 双击：
 
 ```bat
-status.bat
+vision\status.bat
 ```
 
 它会显示：
@@ -386,7 +405,7 @@ latest.jpg
 
 ```text
 请先阅读当前仓库的 README.md、剧本.txt、feedback/vibration-control使用教程.txt，
-并熟悉 start.bat、status.bat 的用途。
+并熟悉 vision/start.bat、vision/status.bat 的用途。
 注意：feedback/ 下的设备反馈脚本与主持人隔离，不要调用它们。
 
 接下来你是本局 RPG 剧本主持人。
@@ -446,7 +465,7 @@ Codex 根据玩家反应调整触手动作、目标护甲和下一段强度
 
 - 不要提交 `latest.jpg`，它可能包含私人画面。
 - 不要提交 `latest.json`、日志、PID、stop 文件。
-- 不要提交 `certs/*.pem`，它们是本地证书和私钥。
+- 不要提交 `vision/certs/*.pem`，它们是本地证书和私钥。
 - 发布前建议运行：
 
 ```powershell
