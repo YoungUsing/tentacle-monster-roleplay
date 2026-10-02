@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Judge 标准问题集 · 调用台</title>
+<style>
+  :root{
+    --bg:#f5f6fa; --card:#fff; --border:#e3e6ee; --text:#1c2230; --muted:#6b7280;
+    --primary:#4f46e5; --primary-hover:#4338ca;
+    --l0:#f59e0b; --l1:#3b82f6; --l2:#10b981; --l3:#8b5cf6;
+    --radius:12px;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;padding:24px 16px 120px;background:var(--bg);color:var(--text);
+    font:14px/1.6 system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  }
+  .wrap{max-width:1520px;margin:0 auto}
+
+  header{margin-bottom:20px}
+  header h1{font-size:22px;margin:0 0 6px;letter-spacing:-.3px}
+  .sub{color:var(--muted);margin:0;font-size:13px}
+  .sub code{font-family:var(--mono);font-size:.92em;background:#eef0f7;padding:1px 5px;border-radius:4px}
+
+  /* ============ 两栏布局 ============ */
+  .layout{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    gap:16px;
+    align-items:start;
+  }
+  .col-left{min-width:0;display:flex;flex-direction:column;gap:16px}
+  .col-right{
+    min-width:0;
+    position:sticky;
+    top:24px;
+    max-height:calc(100vh - 180px);
+    overflow-y:auto;
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+    padding-right:4px;
+  }
+  .col-right::-webkit-scrollbar{width:8px}
+  .col-right::-webkit-scrollbar-thumb{background:#cfd3e0;border-radius:4px}
+  .col-right::-webkit-scrollbar-track{background:transparent}
+
+  @media(max-width:1024px){
+    .layout{grid-template-columns:1fr}
+    .col-right{position:static;max-height:none;overflow:visible;padding-right:0}
+    body{padding-bottom:160px;}
+  }
+
+  /* ============ 卡片 ============ */
+  .card{
+    background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+    padding:18px;box-shadow:0 1px 2px rgba(16,24,40,.04);
+  }
+  .col-left .card{margin:0}
+  .col-right .card{margin:0}
+  .card h2{font-size:14px;font-weight:600;margin:0 0 14px}
+  .card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+  .card-head h2{margin:0}
+
+  label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:12px}
+  label:last-child{margin-bottom:0}
+  input,select,textarea{
+    display:block;width:100%;margin-top:6px;padding:9px 11px;font:inherit;font-size:13px;
+    color:var(--text);background:#fff;border:1px solid var(--border);border-radius:8px;
+    outline:none;transition:border-color .15s,box-shadow .15s;
+  }
+  input:focus,select:focus,textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(79,70,229,.12)}
+  textarea{resize:vertical;font-family:var(--mono);font-size:12.5px}
+
+  .grid{display:grid;gap:10px}
+  .grid-3{grid-template-columns:1.3fr 1fr 1fr}
+  @media(max-width:640px){.grid-3{grid-template-columns:1fr}}
+
+  /* ============ 层级 ============ */
+  .layer-card{border-left:4px solid var(--border);padding-left:14px}
+  .layer-card.L0{border-left-color:var(--l0)}
+  .layer-card.L1{border-left-color:var(--l1)}
+  .layer-card.L2{border-left-color:var(--l2)}
+  .layer-card.L3{border-left-color:var(--l3)}
+
+  .layer-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px}
+  .layer-title{font-size:14px;font-weight:700;margin:0 0 3px}
+  .layer-desc{font-size:11.5px;color:var(--muted);margin:0;line-height:1.5}
+  .layer-tools{display:flex;gap:6px;flex-shrink:0}
+
+  /* ============ 问题卡片 ============ */
+  .q-card{border:1px solid var(--border);border-radius:10px;padding:11px 12px;margin-bottom:8px;background:#fcfcfe;transition:border-color .15s,background .15s}
+  .q-card:last-child{margin-bottom:0}
+  .q-card.selected{border-color:var(--primary);background:#f7f7ff}
+
+  .q-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .q-check{display:flex;align-items:center;gap:8px;cursor:pointer;margin:0;font-weight:600;color:var(--text);font-size:13px}
+  .q-check input[type=checkbox]{width:16px;height:16px;margin:0;accent-color:var(--primary);flex-shrink:0}
+  .q-id{font-family:var(--mono);font-size:11px;font-weight:700;color:#fff;background:var(--primary);padding:1px 7px;border-radius:5px}
+
+  .type-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;letter-spacing:.3px;text-transform:uppercase;flex-shrink:0}
+  .type-noul{background:#ede9fe;color:#6d28d9}
+  .type-choice{background:#dbeafe;color:#1d4ed8}
+  .type-score{background:#d1fae5;color:#047857}
+
+  .q-body{margin-top:9px;padding-top:9px;border-top:1px dashed var(--border);font-size:12px}
+  .q-body:empty{display:none}
+  .q-row{margin-bottom:8px}
+  .q-row:last-child{margin-bottom:0}
+  .q-row-label{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:3px}
+  .q-instr{margin:0;line-height:1.55}
+  .q-criteria{list-style:none;margin:0;padding:0}
+  .q-criteria li{padding:2px 0;display:flex;gap:6px;line-height:1.5}
+  .q-criteria .ck{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--primary);flex-shrink:0;min-width:50px}
+  .q-criteria .cv{color:#374151}
+  .q-note{margin-top:7px;padding:6px 9px;background:#fffbeb;border-left:3px solid var(--l0);border-radius:4px;font-size:11px;color:#78350f;line-height:1.5}
+
+  /* ============ 图片上传 ============ */
+  .drop{border:2px dashed var(--border);border-radius:10px;padding:16px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s}
+  .drop:hover{border-color:var(--primary);background:#fafaff}
+  .drop.dragover{border-color:var(--primary);background:#f0f0ff}
+  .drop-hint{font-size:12px;color:var(--muted)}
+  .preview{display:flex;align-items:center;gap:12px;text-align:left}
+  .preview img{max-height:88px;max-width:150px;border-radius:6px;border:1px solid var(--border);object-fit:cover}
+  .preview-meta{flex:1;font-size:11.5px;color:var(--muted);word-break:break-all;min-width:0}
+  .preview-meta b{color:var(--text);display:block;margin-bottom:2px;font-size:12.5px}
+
+  /* ============ 按钮 ============ */
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 16px;font:inherit;font-size:13px;font-weight:600;border-radius:8px;border:1px solid transparent;cursor:pointer;transition:background .15s,border-color .15s,opacity .15s}
+  .btn-primary{background:var(--primary);color:#fff}
+  .btn-primary:hover:not(:disabled){background:var(--primary-hover)}
+  .btn-primary:disabled{opacity:.55;cursor:not-allowed}
+  .btn-ghost{background:#fff;border-color:var(--border);color:var(--text)}
+  .btn-ghost:hover{background:#fafbff;border-color:#cbd0dd}
+  .btn-sm{padding:5px 10px;font-size:11.5px}
+
+  /* ============ 底悬浮栏 ============ */
+  .action-bar{
+    position:fixed;bottom:16px;left:50%;transform:translateX(-50%);
+    width:calc(100% - 32px);max-width:1520px;z-index:50;
+    background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+    box-shadow:0 8px 24px rgba(16,24,40,.12);
+    padding:12px 16px;
+    display:flex;flex-wrap:wrap;align-items:center;gap:10px;
+  }
+  .counter{font-size:12px;color:var(--muted);margin-left:auto;white-space:nowrap;}
+  .counter b{color:var(--primary)}
+  
+  /* 分隔线 */
+  .v-divider {
+    width: 1px;
+    height: 20px;
+    background: var(--border);
+    margin: 0 4px;
+  }
+
+  /* 快速勾选标签 */
+  .quick-bar-label{
+    font-size:10.5px;font-weight:700;color:var(--muted);
+    letter-spacing:.5px;text-transform:uppercase;margin-left:4px;margin-right:2px;
+  }
+  
+  /* chip 容器 */
+  .quick-bar {
+    display:flex;flex-wrap:wrap;gap:6px;align-items:center;
+  }
+
+  /* chip 按钮 */
+  .chip{
+    display:inline-flex;align-items:center;justify-content:center;
+    padding:4px 9px;font:inherit;font-size:12px;font-weight:700;
+    font-family:var(--mono);
+    background:#fff;border:1.5px solid var(--border);
+    border-radius:999px;cursor:pointer;
+    transition:background .12s,border-color .12s,color .12s,transform .08s;
+    user-select:none;
+  }
+  .chip:hover{border-color:#cbd0dd;}
+  .chip:active{transform:scale(.96)}
+  
+  /* 彩色字 —— 按层级分配颜色 */
+  .chip[data-layer="L0"]{ color: var(--l0); border-color: #fde68a; }
+  .chip[data-layer="L1"]{ color: var(--l1); border-color: #bfdbfe; }
+  .chip[data-layer="L2"]{ color: var(--l2); border-color: #a7f3d0; }
+  .chip[data-layer="L3"]{ color: var(--l3); border-color: #ddd6fe; }
+
+  /* 选中状态：统一紫色背景，白色文字 */
+  .chip.on{
+    background:var(--primary); border-color:var(--primary); color:#fff !important;
+    box-shadow:0 2px 6px rgba(79,70,229,.28);
+  }
+
+  /* ============ 结果 ============ */
+  .badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11.5px;font-weight:700;background:#e5e7eb;color:#374151}
+  .badge-ok{background:#dcfce7;color:#15803d}
+  .badge-err{background:#fee2e2;color:#b91c1c}
+  .badge-idle{background:#e5e7eb;color:#6b7280}
+  .meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .muted{color:var(--muted);font-size:12px}
+
+  .answers{display:grid;gap:8px}
+  .ans-row{display:flex;align-items:flex-start;gap:10px;padding:9px 11px;background:#fafbff;border:1px solid var(--border);border-radius:8px}
+  .ans-id{font-family:var(--mono);font-size:11px;font-weight:700;color:#fff;background:var(--primary);padding:1px 7px;border-radius:5px;flex-shrink:0;margin-top:1px}
+  .ans-body{flex:1;min-width:0}
+  .ans-key{font-size:11.5px;color:var(--muted);margin-bottom:2px}
+  .ans-val{font-size:13.5px;font-weight:700;line-height:1.4;word-break:break-word}
+  .ans-sub{font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:3px;word-break:break-all}
+  .ans-hint{margin-top:6px;font-size:11px;padding:5px 9px;border-radius:5px;background:#fffbeb;border-left:3px solid var(--l0);color:#78350f;line-height:1.5}
+
+  pre.code{background:#0f172a;color:#e2e8f0;border-radius:10px;padding:14px;margin:0;font-family:var(--mono);font-size:12px;line-height:1.55;overflow:auto;max-height:340px;white-space:pre-wrap;word-break:break-word}
+  .j-key{color:#7dd3fc}
+  .j-str{color:#a5f3a5}
+  .j-num{color:#fcd34d}
+  .j-bool{color:#f0abfc}
+  .j-null{color:#94a3b8}
+
+  .rules-table{width:100%;border-collapse:collapse;font-size:11.5px}
+  .rules-table th,.rules-table td{padding:6px 8px;text-align:left;border-bottom:1px solid var(--border);vertical-align:top}
+  .rules-table th{font-weight:700;color:var(--muted);font-size:10.5px;text-transform:uppercase;letter-spacing:.3px}
+  .rules-table td:first-child{font-family:var(--mono);font-weight:700;color:var(--primary);width:80px}
+  .rules-table tr:last-child td{border-bottom:0}
+
+  .empty-state{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:48px 20px;color:var(--muted);text-align:center;font-size:13px;
+  }
+  .empty-state svg{opacity:.35;margin-bottom:14px}
+  .empty-state p{margin:0;line-height:1.7}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>Judge 标准问题集 · 调用台</h1>
+    <p class="sub">
+      视觉判断模型对 <code>latest.jpg</code> 的每次画面变化提问 ·
+      jev 协议三种题型（<code>choice / score / noul</code>）·
+      分层触发：门控 → 感知 → 校验
+    </p>
+  </header>
+
+  <div class="layout">
+
+    <!-- ==================== 左栏 ==================== -->
+    <div class="col-left">
+
+      <section class="card">
+        <h2>连接配置</h2>
+        <div class="grid grid-3">
+          <label>服务地址
+            <input id="baseUrl" value="/api" spellcheck="false" />
+          </label>
+          <label>API Key
+            <input id="apiKey" placeholder="可选" spellcheck="false" />
+          </label>
+          <label>模型
+            <select id="model">
+              <option value="laya-auto">laya-auto</option>
+              <option value="laya-multilingual">laya-multilingual</option>
+              <option value="laya-english">laya-english</option>
+            </select>
+          </label>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>state · 上下文文本</h2>
+          <button id="loadDemo" class="btn btn-ghost btn-sm" type="button">载入示例</button>
+        </div>
+        <label>
+          <textarea id="stateInput" rows="3" spellcheck="false"
+            placeholder="上一帧摘要 + 帧差区域；校验层填 intent 摘要 + 反馈状态"></textarea>
+        </label>
+        <span class="muted" style="display:block;margin-top:6px;font-size:11.5px">
+          门控层：上一帧摘要 + 帧差数据 · 校验层：intent 摘要 + 反馈状态（<b>不传图</b>）
+        </span>
+
+        <div style="margin-top:14px">
+          <div class="q-row-label" style="margin-bottom:8px">images · 当前帧</div>
+          <div class="drop" id="drop">
+            <input type="file" id="fileInput" accept="image/*" hidden />
+            <div id="dropHint" class="drop-hint">
+              点击或拖拽 <code>latest.jpg</code> 到此处 · 留空则只做文本判断
+            </div>
+            <div id="previewWrap" class="preview" hidden>
+              <img id="preview" alt="preview" />
+              <div class="preview-meta">
+                <b id="fileName">—</b>
+                <span id="fileSize">—</span>
+              </div>
+              <button id="clearImg" class="btn btn-ghost btn-sm" type="button">移除</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div id="layers" style="display:flex;flex-direction:column;gap:16px"></div>
+
+    </div>
+
+    <!-- ==================== 右栏 ==================== -->
+    <div class="col-right">
+
+      <section class="card">
+        <div class="card-head">
+          <h2>结果</h2>
+          <div class="meta">
+            <span id="statusBadge" class="badge badge-idle">待发送</span>
+            <span id="elapsed" class="muted"></span>
+          </div>
+        </div>
+
+        <div id="answers">
+          <div class="empty-state" id="emptyState">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <p>左侧勾选问题后点击「发送选中问题」<br/>判断结果会显示在这里</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" id="rawCard" hidden>
+        <div class="card-head">
+          <h2>原始响应</h2>
+          <button id="copyJson" class="btn btn-ghost btn-sm" type="button">复制 JSON</button>
+        </div>
+        <pre id="raw" class="code"></pre>
+      </section>
+
+      <section class="card">
+        <h2 style="font-size:13px;color:var(--muted)">置信度降级规则</h2>
+        <table class="rules-table">
+          <thead><tr><th>题型</th><th>confidence &lt; 0.6 时</th></tr></thead>
+          <tbody>
+            <tr><td>Q1</td><td>宁可唤醒（漏报代价高于误报）</td></tr>
+            <tr><td>Q2 / Q3</td><td>标 <code>low_conf</code>，只记录不参与交叉验证</td></tr>
+            <tr><td>Q4-Q7</td><td>标 <code>low_conf</code>，digest 中注明"不确定"</td></tr>
+            <tr><td>Q8</td><td>宁可拒绝（越界宁可降级，不确定就不发）</td></tr>
+            <tr><td>Q9 / Q10</td><td>按保守方向处置（视为更高档位）</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+    </div>
+
+  </div>
+
+  <!-- ============ 底悬浮栏（合并为一行） ============ -->
+  <div class="action-bar">
+    <button id="send" class="btn btn-primary" type="button">发送选中问题</button>
+    <button id="selectAll" class="btn btn-ghost btn-sm" type="button">全选</button>
+    <button id="clearAll" class="btn btn-ghost btn-sm" type="button">清空</button>
+    
+    <span class="v-divider"></span>
+
+    <span class="quick-bar-label">快速勾选</span>
+    <div class="quick-bar" id="quickBar">
+      <!-- chips 由 JS 填充 -->
+    </div>
+
+    <span class="counter" id="counter">已选 <b>0</b> 题</span>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+  const esc = s => String(s).replace(/[&<>"']/g, c => (
+    {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]
+  ));
+
+  /* ================= 问题集定义 ================= */
+
+  const LAYERS = [
+    {
+      id: 'L0',
+      title: '第 0 层 · 画质自检',
+      desc: '每次调用任何视觉判断前执行。失败则本轮全部跳过。',
+      questions: [
+        {
+          id: 'Q0', key: '画面可用性', type: 'noul',
+          instructions: '这张游戏画面是否清晰可读，能够用于现场判断？',
+          noul: {
+            'true': '构图、亮度、清晰度足以辨认玩家的姿态、装备和桌面上道具',
+            'false': '严重欠曝或过曝、剧烈运动模糊、镜头被遮挡、画面等于纯黑或纯色'
+          },
+          note: '阈值：P(true) < 0.5 → 本轮跳过视觉判断，state.json 记 quality:"blocked"。依据：小型 VLM 在严重欠曝下准确率崩塌且置信度不可靠（AUROC≈0.5），必须上游拦截。'
+        }
+      ]
+    },
+    {
+      id: 'L1',
+      title: '第 1 层 · 门控',
+      desc: '帧差层报警后调用。回答"值不值得叫醒 5-30 秒的大模型"。',
+      questions: [
+        {
+          id: 'Q1', key: '是否唤醒主持人', type: 'noul',
+          instructions: '与 state 中的上一帧摘要相比，当前画面是否出现了剧情级变化，需要主持人大模型介入？',
+          noul: {
+            'true': '出现了值得推进剧情的变化——姿态明显改变、道具被拿起/放下/移走、镜头转向新区域、护甲或战衣状态可见地改变、出现此前不在画面中的新物体',
+            'false': '画面与上次实质相同，或仅有微小调整（手指微动、光影抖动、镜头呼吸）'
+          },
+          note: '阈值：P(true) ≥ 0.6 唤醒（门控侧宁可多唤醒，漏报代价 = 剧情失明）。触发后进入冷却窗口（默认 20s），窗口内同类变化不再唤醒，但变化仍记入 state 历史。'
+        },
+        {
+          id: 'Q2', key: '变化幅度', type: 'score',
+          instructions: '相比上一帧摘要，当前画面变化有多剧烈？',
+          criteria: ['无变化', '微小调整', '明显动作', '剧烈变化'],
+          note: '输出作为唤醒 prompt 里的紧急度标签：≥2 才唤醒；3 时标注 urgent。与 Q1 交叉验证——Q1 说 true 但 Q2 ≤1 视为噪声，丢弃。'
+        },
+        {
+          id: 'Q3', key: '变化类别', type: 'choice',
+          instructions: '本次变化主要属于哪一类？',
+          criteria: {
+            '姿态变化': '玩家身体的姿势、朝向、位置发生了可见改变',
+            '道具变化': '桌面或手中的物品被拿起、放下、移走、翻面或增减',
+            '镜头移动': '视角转向了不同区域，或镜头推拉改变了取景范围',
+            '装备状态': '战衣、护甲、披风的穿戴状态或表面状态出现可见改变',
+            '多类并发': '以上不止一类同时发生'
+          },
+          note: '只在 Q1 触发后作答，结果写入 state.json 的 changes，供唤醒 prompt 直接引用。'
+        }
+      ]
+    },
+    {
+      id: 'L2',
+      title: '第 2 层 · 现场感知',
+      desc: 'LLM 唤醒后可选增强，为 digest 提供结构化细节。若 LLM 本轮决定读原图，本层可省略。',
+      questions: [
+        {
+          id: 'Q4', key: '玩家姿态', type: 'choice',
+          instructions: '画面中玩家当前的总体姿态最接近哪一种？',
+          criteria: {
+            '端坐整理': '稳定坐着，手部在做整理、翻找、摆弄类小动作',
+            '后仰戒备': '身体向后撤离桌面或镜头，呈防备姿态',
+            '前倾专注': '身体前倾靠近镜头或某件物品，注意力集中',
+            '侧身隐藏': '身体转向侧面，部分躯体移出画面或被遮挡',
+            '无法判断': '姿态被遮挡、出画或画质不足'
+          }
+        },
+        {
+          id: 'Q5', key: '手部占用', type: 'choice',
+          instructions: '画面中玩家的双手此刻主要在做什么？',
+          criteria: {
+            '双手可见空闲': '双手都在画面内且未持握或操作任何东西',
+            '持有物品': '至少一只手握着或托着某件道具',
+            '操作动作中': '正在翻找、穿戴、拉扯衣物或护甲',
+            '手部不可见': '双手均不在画面内或完全被遮挡'
+          }
+        },
+        {
+          id: 'Q6', key: '视野焦点', type: 'choice',
+          instructions: '当前镜头主要对准什么区域？',
+          criteria: {
+            '上半身近景': '胸部以上占画面主体',
+            '全身中景': '可见从头到腰腹或大腿的完整上半身轮廓',
+            '桌面道具': '画面主体是桌面上的物品而非人',
+            '环境空镜': '既无人物主体也无道具，拍的是房间环境',
+            '特写局部': '极近距离的单一物件或身体局部'
+          }
+        },
+        {
+          id: 'Q7', key: '道具清点', type: 'noul',
+          instructions: '与 state 中的桌面道具基线相比，画面中的道具数量或位置是否发生了改变？',
+          noul: {
+            'true': '有道具消失、出现、被拿起或位置明显移动',
+            'false': '道具与基线一致'
+          }
+        }
+      ]
+    },
+    {
+      id: 'L3',
+      title: '第 3 层 · 输出校验',
+      desc: 'LLM 输出 intent.json 后执行。调用时不传图，state 为 intent 摘要 + 当前反馈状态 + 最近校验历史。',
+      questions: [
+        {
+          id: 'Q8', key: '反馈强度越界', type: 'choice',
+          instructions: '结合剧本允许的强度区间和当前正在运行的反馈状态，LLM 请求的这次反馈应如何处置？',
+          criteria: {
+            '放行': '强度与时长均在允许区间内，且与正在运行的效果不冲突',
+            '降级': '超出区间但可安全地降到相邻档位执行',
+            '拒绝': '触碰硬边界（超上限、冷却未过、与运行中效果冲突、非有界持续请求）'
+          },
+          note: '处置：放行 → 写 feedback/event.json；降级 → 写降级后事件并回写 intent.json 标注；拒绝 → 丢弃，intent 标注 rejected。数值硬边界（set>100、hit≤0、时长缺失）在规则层直接拒绝，不消耗模型调用。'
+        },
+        {
+          id: 'Q9', key: '玩家承受状态', type: 'score',
+          instructions: '基于画面和最近的反应历史，玩家当前对正在进行的反馈的承受状态如何？',
+          criteria: ['轻松无感', '略有紧绷', '明显不适但可承受', '接近极限', '已超限或强烈抗拒'],
+          note: '只在反馈运行中调用。score ≥ 3 强制进入衰减（下一事件强度减半），score ≥ 4 直接 STOP 并唤醒 LLM。'
+        },
+        {
+          id: 'Q10', key: '玩家回应类型', type: 'choice',
+          instructions: '针对刚刚发生的剧情与反馈，玩家画面呈现的反应最接近哪一类？',
+          criteria: {
+            '配合继续': '姿态放松或维持，无回避迹象',
+            '轻微抵抗': '局部收紧、遮挡、后撤但未离开',
+            '明确回避': '大幅度后撤、转身、用手格挡、移出道具',
+            '中断请求': '画面中出现手势、纸条、屏幕等明确暂停/停止信号',
+            '不可判断': '画质或构图不足以读出反应'
+          },
+          note: '"中断请求" P ≥ 0.7 → 立即 STOP 所有反馈并唤醒 LLM（最高优先级）。"明确回避" → 下一轮 intent 降低强度；连续两次 → 强制冷却。'
+        }
+      ]
+    }
+  ];
+
+  const KEY_TO_ID = {};
+  const ALL_QUESTIONS = [];
+  LAYERS.forEach(l => l.questions.forEach(q => {
+    KEY_TO_ID[q.key] = q.id;
+    ALL_QUESTIONS.push({ id: q.id, key: q.key, layer: l.id });
+  }));
+
+  const DEGRADE_HINT = {
+    Q1:  '低置信度 → 按规则应唤醒（漏报代价高于误报）',
+    Q2:  '低置信度 → 标 low_conf，不参与交叉验证',
+    Q3:  '低置信度 → 标 low_conf，不参与交叉验证',
+    Q4:  '低置信度 → digest 中注明"不确定"',
+    Q5:  '低置信度 → digest 中注明"不确定"',
+    Q6:  '低置信度 → digest 中注明"不确定"',
+    Q7:  '低置信度 → digest 中注明"不确定"',
+    Q8:  '低置信度 → 按规则应拒绝（不确定就不发）',
+    Q9:  '低置信度 → 按保守方向处置（视为更高档位）',
+    Q10: '低置信度 → 按保守方向处置（视为更高档位）'
+  };
+
+  /* ================= 渲染层级 ================= */
+
+  function renderLayers(){
+    const root = $('#layers');
+    root.innerHTML = '';
+
+    LAYERS.forEach(layer => {
+      const sec = document.createElement('section');
+      sec.className = 'card layer-card ' + layer.id;
+
+      const head = document.createElement('div');
+      head.className = 'layer-head';
+      head.innerHTML = `
+        <div>
+          <p class="layer-title">${esc(layer.title)}</p>
+          <p class="layer-desc">${esc(layer.desc)}</p>
+        </div>
+        <div class="layer-tools">
+          <button class="btn btn-ghost btn-sm" data-layer-toggle="${layer.id}" type="button">选中本层</button>
+        </div>
+      `;
+      sec.appendChild(head);
+
+      layer.questions.forEach(q => sec.appendChild(buildQuestionCard(q)));
+      root.appendChild(sec);
+    });
+
+    $$('[data-layer-toggle]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const layerId = btn.dataset.layerToggle;
+        const layer = LAYERS.find(l => l.id === layerId);
+        const boxes = layer.questions.map(q => $(`.q-card[data-qid="${q.id}"] input[type=checkbox]`));
+        const allChecked = boxes.every(b => b.checked);
+        boxes.forEach(b => {
+          b.checked = !allChecked;
+          b.closest('.q-card').classList.toggle('selected', b.checked);
+        });
+        syncSelected();
+        btn.textContent = allChecked ? '选中本层' : '取消本层';
+      });
+    });
+  }
+
+  function buildQuestionCard(q){
+    const card = document.createElement('div');
+    card.className = 'q-card';
+    card.dataset.qid = q.id;
+
+    const head = document.createElement('div');
+    head.className = 'q-head';
+    head.innerHTML = `
+      <label class="q-check">
+        <input type="checkbox" class="q-select" />
+        <span class="q-id">${esc(q.id)}</span>
+        <span class="q-key">${esc(q.key)}</span>
+      </label>
+      <span class="type-badge type-${esc(q.type)}">${esc(q.type)}</span>
+    `;
+    card.appendChild(head);
+
+    const body = document.createElement('div');
+    body.className = 'q-body';
+    body.appendChild(row('instructions', `<p class="q-instr">${esc(q.instructions)}</p>`));
+
+    if (q.type === 'choice') {
+      const items = Object.entries(q.criteria).map(([k, v]) =>
+        `<li><span class="ck">${esc(k)}</span><span class="cv">${esc(v)}</span></li>`
+      ).join('');
+      body.appendChild(row('criteria', `<ul class="q-criteria">${items}</ul>`));
+    } else if (q.type === 'score') {
+      const items = q.criteria.map((c, i) =>
+        `<li><span class="ck">${i}</span><span class="cv">${esc(c)}</span></li>`
+      ).join('');
+      body.appendChild(row('criteria', `<ul class="q-criteria">${items}</ul>`));
+    } else if (q.type === 'noul' && q.noul) {
+      const items = Object.entries(q.noul).map(([k, v]) =>
+        `<li><span class="ck">${esc(k)}</span><span class="cv">${esc(v)}</span></li>`
+      ).join('');
+      body.appendChild(row('criteria（参考）', `<ul class="q-criteria">${items}</ul>`));
+    }
+
+    if (q.note) {
+      const note = document.createElement('div');
+      note.className = 'q-note';
+      note.textContent = q.note;
+      body.appendChild(note);
+    }
+
+    card.appendChild(body);
+
+    const cb = card.querySelector('input[type=checkbox]');
+    cb.addEventListener('change', () => {
+      card.classList.toggle('selected', cb.checked);
+      syncSelected();
+    });
+
+    return card;
+  }
+
+  function row(label, html){
+    const div = document.createElement('div');
+    div.className = 'q-row';
+    div.innerHTML = `<div class="q-row-label">${esc(label)}</div>${html}`;
+    return div;
+  }
+
+  /* ================= 快速勾选 chips ================= */
+
+  function renderQuickChips(){
+    const bar = $('#quickBar');
+    $$('.chip', bar).forEach(c => c.remove());
+
+    ALL_QUESTIONS.forEach(q => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'chip';
+      chip.dataset.qid = q.id;
+      chip.dataset.layer = q.layer;
+      chip.title = `${q.id} · ${q.key}`;
+      // 去掉了 .tick 圆点，只保留彩色的 Q 编号
+      chip.textContent = q.id;
+
+      chip.addEventListener('click', () => {
+        toggleQuestion(q.id);
+      });
+
+      bar.appendChild(chip);
+    });
+  }
+
+  function toggleQuestion(qid){
+    const cb = $(`.q-card[data-qid="${qid}"] input[type=checkbox]`);
+    if (!cb) return;
+    cb.checked = !cb.checked;
+    cb.closest('.q-card').classList.toggle('selected', cb.checked);
+    syncSelected();
+  }
+
+  function syncSelected(){
+    let n = 0;
+    $$('.q-card input[type=checkbox]').forEach(cb => {
+      const qid = cb.closest('.q-card').dataset.qid;
+      const chip = $(`.chip[data-qid="${qid}"]`);
+      if (cb.checked) {
+        n++;
+        if (chip) chip.classList.add('on');
+      } else {
+        if (chip) chip.classList.remove('on');
+      }
+    });
+
+    $('#counter').innerHTML = `已选 <b>${n}</b> 题`;
+    $('#send').disabled = n === 0;
+  }
+
+  /* ================= 图片 ================= */
+
+  let imageBase64 = null;
+
+  function setupImage(){
+    const drop = $('#drop');
+    const input = $('#fileInput');
+
+    drop.addEventListener('click', e => {
+      if (e.target.closest('#clearImg')) return;
+      if (e.target.closest('button')) return;
+      if ($('#previewWrap').hidden) input.click();
+    });
+
+    drop.addEventListener('dragover', e => {
+      e.preventDefault();
+      drop.classList.add('dragover');
+    });
+    drop.addEventListener('dragleave', () => drop.classList.remove('dragover'));
+    drop.addEventListener('drop', async e => {
+      e.preventDefault();
+      drop.classList.remove('dragover');
+      const f = e.dataTransfer.files && e.dataTransfer.files[0];
+      if (f) await setImage(f);
+    });
+
+    input.addEventListener('change', async () => {
+      const f = input.files && input.files[0];
+      if (f) await setImage(f);
+    });
+
+    $('#clearImg').addEventListener('click', e => {
+      e.stopPropagation();
+      clearImage();
+    });
+  }
+
+  async function setImage(file){
+    if (!file.type.startsWith('image/')) { alert('请选择图片文件。'); return; }
+    const dataUrl = await new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(r.result);
+      r.onerror = rej;
+      r.readAsDataURL(file);
+    });
+
+    imageBase64 = dataUrl.split(',')[1];
+
+    $('#preview').src = dataUrl;
+    $('#fileName').textContent = file.name;
+    $('#fileSize').textContent =
+      formatSize(file.size) + ' · base64 约 ' + formatSize(Math.round(imageBase64.length * 0.75));
+    $('#dropHint').hidden = true;
+    $('#previewWrap').hidden = false;
+  }
+
+  function clearImage(){
+    imageBase64 = null;
+    $('#fileInput').value = '';
+    $('#preview').src = '';
+    $('#dropHint').hidden = false;
+    $('#previewWrap').hidden = true;
+  }
+
+  function formatSize(b){
+    if (b < 1024) return b + ' B';
+    if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
+    return (b / 1024 / 1024).toFixed(2) + ' MB';
+  }
+
+  /* ================= 请求 ================= */
+
+  function collectQuestions(){
+    const questions = {};
+    const selected = $$('.q-card input[type=checkbox]:checked');
+    if (!selected.length) throw new Error('请至少勾选一个问题。');
+
+    for (const cb of selected) {
+      const card = cb.closest('.q-card');
+      const qid = card.dataset.qid;
+
+      let def = null;
+      for (const layer of LAYERS) {
+        const found = layer.questions.find(q => q.id === qid);
+        if (found) { def = found; break; }
+      }
+      if (!def) continue;
+
+      const obj = { type: def.type, instructions: def.instructions };
+      if (def.type === 'choice' || def.type === 'score') obj.criteria = def.criteria;
+
+      questions[def.key] = obj;
+    }
+    return questions;
+  }
+
+  function highlight(json){
+    return esc(json).replace(
+      /("(?:\\.|[^"\\])*"(\s*:)?|\b(?:true|false)\b|\bnull\b|-?\d+(?:\.\d+)?(?:[eE][+\-]?\d+)?)/g,
+      m => {
+        let cls = 'j-num';
+        if (/^"/.test(m)) cls = /:$/.test(m.trim()) ? 'j-key' : 'j-str';
+        else if (/true|false/.test(m)) cls = 'j-bool';
+        else if (/null/.test(m)) cls = 'j-null';
+        return `<span class="${cls}">${m}</span>`;
+      }
+    );
+  }
+
+  async function send(){
+    const btn = $('#send');
+
+    const baseUrl = $('#baseUrl').value.trim().replace(/\/+$/, '');
+    if (!baseUrl) { alert('请填写服务地址。'); return; }
+
+    const apiKey = $('#apiKey').value.trim();
+    const model = $('#model').value;
+    const stateText = $('#stateInput').value;
+
+    let questions;
+    try { questions = collectQuestions(); }
+    catch (e) { alert(e.message); return; }
+
+    const body = { state: stateText, questions };
+    if (model) body.model = model;
+    if (imageBase64) body.images = [imageBase64];
+
+    const headers = { 'Content-Type': 'application/json' };
+    if (apiKey) headers['Authorization'] = 'Bearer ' + apiKey;
+
+    const url = baseUrl + '/v1/systemone';
+
+    $('#statusBadge').textContent = '请求中…';
+    $('#statusBadge').className = 'badge';
+    $('#elapsed').textContent = '';
+    $('#answers').innerHTML = '<div class="muted" style="padding:12px 0">正在等待响应…</div>';
+    $('#rawCard').hidden = true;
+    btn.disabled = true;
+    btn.textContent = '请求中…';
+
+    const t0 = performance.now();
+    try {
+      const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
+      const elapsed = Math.round(performance.now() - t0);
+      const text = await res.text();
+
+      let data;
+      try { data = JSON.parse(text); } catch (e) { data = text; }
+
+      $('#statusBadge').textContent = res.status + ' ' + res.statusText;
+      $('#statusBadge').className = 'badge ' + (res.ok ? 'badge-ok' : 'badge-err');
+      $('#elapsed').textContent = elapsed + ' ms';
+
+      renderAnswers(data);
+
+      $('#rawCard').hidden = false;
+      $('#raw').innerHTML = typeof data === 'string'
+        ? esc(data)
+        : highlight(JSON.stringify(data, null, 2));
+
+    } catch (err) {
+      const elapsed = Math.round(performance.now() - t0);
+      $('#statusBadge').textContent = '请求失败';
+      $('#statusBadge').className = 'badge badge-err';
+      $('#elapsed').textContent = elapsed + ' ms';
+      $('#answers').innerHTML = '';
+      $('#rawCard').hidden = false;
+      $('#raw').textContent =
+        String(err) + '\n\n' +
+        '常见原因：\n' +
+        '1. 服务未启动 —— 先运行 laya-serve\n' +
+        '2. 地址不对 —— 若走本地代理，baseUrl 填 /api\n' +
+        '3. CORS 拦截 —— 用 serve.py 反向代理可绕过';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '发送选中问题';
+      syncSelected();
+    }
+  }
+
+  /* ================= 结果 ================= */
+
+  function renderAnswers(data){
+    const box = $('#answers');
+    box.innerHTML = '';
+
+    if (!data || typeof data !== 'object' || !data.answers) {
+      box.innerHTML = '<div class="empty-state"><p>响应中没有 answers 字段。</p></div>';
+      return;
+    }
+
+    const answers = data.answers;
+    const keys = Object.keys(answers);
+
+    if (!keys.length) {
+      box.innerHTML = '<div class="empty-state"><p>answers 为空。</p></div>';
+      return;
+    }
+
+    for (const key of keys) {
+      const ans = answers[key];
+      const qid = KEY_TO_ID[key] || '?';
+      const conf = pickConfidence(ans);
+      const shown = formatAnswer(ans);
+
+      const row = document.createElement('div');
+      row.className = 'ans-row';
+      row.innerHTML = `
+        <span class="ans-id">${esc(qid)}</span>
+        <div class="ans-body">
+          <div class="ans-key">${esc(key)}</div>
+          <div class="ans-val">${esc(shown.value)}</div>
+          ${shown.sub ? `<div class="ans-sub">${esc(shown.sub)}</div>` : ''}
+          ${conf !== null ? `<div class="ans-sub">confidence: ${conf.toFixed(3)}</div>` : ''}
+          ${conf !== null && conf < 0.6 && DEGRADE_HINT[qid]
+            ? `<div class="ans-hint">${esc(DEGRADE_HINT[qid])}</div>`
+            : ''}
+        </div>
+      `;
+      box.appendChild(row);
+    }
+  }
+
+  function pickConfidence(ans){
+    if (!ans || typeof ans !== 'object') return null;
+    const c = ans.confidence;
+    return typeof c === 'number' ? c : null;
+  }
+
+  function formatAnswer(ans){
+    if (ans == null) return { value: '—', sub: '' };
+
+    if (typeof ans === 'string' || typeof ans === 'number' || typeof ans === 'boolean') {
+      return { value: String(ans), sub: '' };
+    }
+
+    if ('choice' in ans) {
+      const probs = ans.probabilities || ans.probs || ans.scores;
+      let sub = '';
+      if (probs && typeof probs === 'object') {
+        sub = Object.entries(probs)
+          .map(([k, v]) => `${k}=${typeof v === 'number' ? v.toFixed(3) : v}`)
+          .join('  ');
+      }
+      return { value: String(ans.choice), sub };
+    }
+
+    if ('noul' in ans) {
+      const p = ans.noul;
+      if (typeof p !== 'number') return { value: String(p), sub: '' };
+      const verdict = p >= 0.5 ? '是' : '否';
+      return { value: `${verdict}（P(true)=${p.toFixed(3)}）`, sub: '' };
+    }
+
+    if ('score' in ans) {
+      const s = ans.score;
+      if (typeof s !== 'number') return { value: String(s), sub: '' };
+      return { value: s.toFixed(2), sub: '预期等级索引（取整后映射到 criteria）' };
+    }
+
+    return { value: JSON.stringify(ans), sub: '' };
+  }
+
+  /* ================= 初始化 ================= */
+
+  function init(){
+    renderLayers();
+    renderQuickChips();
+    setupImage();
+    syncSelected();
+
+    $('#send').addEventListener('click', send);
+
+    $('#selectAll').addEventListener('click', () => {
+      $$('.q-card input[type=checkbox]').forEach(cb => {
+        cb.checked = true;
+        cb.closest('.q-card').classList.add('selected');
+      });
+      syncSelected();
+    });
+
+    $('#clearAll').addEventListener('click', () => {
+      $$('.q-card input[type=checkbox]').forEach(cb => {
+        cb.checked = false;
+        cb.closest('.q-card').classList.remove('selected');
+      });
+      syncSelected();
+    });
+
+    $('#loadDemo').addEventListener('click', () => {
+      $('#stateInput').value =
+        '上一帧摘要：玩家端坐整理，桌面有[纸条x2, 骰子, 饰品]。' +
+        '10秒内帧差区域：手部/桌面左上。';
+    });
+
+    $('#copyJson').addEventListener('click', async () => {
+      const txt = $('#raw').textContent;
+      if (!txt) return;
+      try {
+        await navigator.clipboard.writeText(txt);
+        const b = $('#copyJson');
+        b.textContent = '已复制 ✓';
+        setTimeout(() => (b.textContent = '复制 JSON'), 1400);
+      } catch (e) {
+        alert('复制失败，请手动选中复制。');
+      }
+    });
+
+    document.addEventListener('keydown', e => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        if (!$('#send').disabled) send();
+      }
+    });
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
